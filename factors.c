@@ -1,47 +1,46 @@
-#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
 
-typedef struct {
-    int p;
-    int q;
-} Factors;
+int main(int argc, char *argv[])
+{
+	FILE *stream;
+	char *line = NULL;
+	size_t len = 0;
+	long long flag = 1, div, rest, number, counter;
+	ssize_t nread;
 
-Factors factorize(int number) {
-    Factors factors = {-1, -1};
-    for (int i = 2; i < number; i++) {
-        if (number % i == 0) {
-            factors.p = i;
-            factors.q = number / i;
-            break;
-        }
-    }
-    return factors;
+	if (argc != 2) {
+		fprintf(stderr, "Usage: %s <file>\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	stream = fopen(argv[1], "r");
+	if (stream == NULL) {
+		perror("fopen");
+		exit(EXIT_FAILURE);
+	}
+
+	while ((nread = getline(&line, &len, stream)) != -1) {
+		flag = 1, div = 2;
+		number = atoll(line);
+		while (flag) {
+			rest = number % div;
+			if (!rest) {
+				counter = number / div;
+				printf("%lld=%lld*%lld\n", number, counter, div);
+				flag = 0;
+			}
+			div++;
+		}
+	}
+
+	free(line);
+	fclose(stream);
+	exit(EXIT_SUCCESS);
 }
-
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Usage: %s <file>\n", argv[0]);
-        return 1;
-    }
-
-    char *input_file = argv[1];
-    FILE *file = fopen(input_file, "r");
-    if (file == NULL) {
-        printf("File not found: %s\n", input_file);
-        return 1;
-    }
-
-    int number;
-    while (fscanf(file, "%d", &number) != EOF) {
-        Factors factors = factorize(number);
-        if (factors.p != -1 && factors.q != -1) {
-            printf("%d=%d*%d\n", number, factors.p, factors.q);
-        } else {
-            printf("%d is prime\n", number);
-        }
-    }
-
-    fclose(file);
-    return 0;
-}
-
